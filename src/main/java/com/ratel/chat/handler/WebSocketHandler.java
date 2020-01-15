@@ -157,13 +157,14 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
         String uri = request.uri();
         //如果url包含参数，需要处理
         if (!uri.contains("?")) super.channelRead(ctx, msg);
-        String substring = uri.substring(uri.charAt('?') + 1);
+        String substring = uri.substring(uri.indexOf('?') + 1);
         String[] split = substring.split("=");
         String token = null;
         for (int i = 0; i < substring.length(); i++) {
             if (!split[i].equals("token")) continue;
             if (++i > split.length - 1) continue;
             token = split[split.length - 1];
+            break;
         }
         //校验token
         if (needAuthorization) {

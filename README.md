@@ -2,7 +2,7 @@
 > chat 是个 java 简单的聊天框架。
 <p align="center">
 <a href="#"><img alt="JDK" src="https://img.shields.io/badge/JDK-1.8-yellow.svg?style=flat-square"/></a>
-------------------------------
+
 
 ## 简介
 
