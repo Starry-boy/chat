@@ -28,4 +28,12 @@ public class ChatProperties {
     private String tokenName = "token";
     /** webSocketUri */
     private String webSocketUri = "/ws";
+    /** 消息持久化消费者数量 */
+    private int coreMessageConsumers = 4;
+    /** 消息持久化最大消费者数量 */
+    private int maximumMessageConsumers = 8;
+    /** 消息持久化消费者存活时间 秒*/
+    private int messageConsumersKeepAliveTime = 300;
+    /** 消息持久化消息队列大小 */
+    private int messageBlackQueueSize = Integer.MAX_VALUE;
 }

@@ -23,7 +23,7 @@ public class SimpleMessageForwardHandler implements MessageForwardHandler {
 
     @Override
     public void redirectMessage(Message message) {
-        log.debug("----------------------------->>>   用户 {} 于 {} 向 {} 发送信息, 信息类型 {}",
+        log.debug(">>>   用户 {} 于 {} 向 {} 发送信息, 信息类型 {}",
                 message.getFrom(), message.getSendDate(), message.getTo(), message.getType()
         );
         String type = message.getType();

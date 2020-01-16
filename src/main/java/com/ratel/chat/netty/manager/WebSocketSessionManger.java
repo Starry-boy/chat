@@ -28,7 +28,7 @@ public class WebSocketSessionManger {
     }
 
     public static void createSession(Long sessionId, ChannelHandlerContext ctx){
-        log.debug("----------------------------->>>   createSession: name={} id={} ",ctx.name(),sessionId);
+        log.debug(">>>   createSession: name={} id={} ",ctx.name(),sessionId);
         WebSocketSession webSocketSession = WebSocketSessionFactory.createWebSocketSession(sessionId,ctx);
         webSocketSessionMap.put(sessionId, webSocketSession);
         webSocketSessionNameMap.put(ctx.name(),webSocketSession);
@@ -36,7 +36,7 @@ public class WebSocketSessionManger {
 
     public static void destroySession(String sessionName){
         WebSocketSession webSocketSession = webSocketSessionNameMap.get(sessionName);
-        log.debug("----------------------------->>>   destroySession: name={} id={} ",webSocketSession.getName(),webSocketSession.getId());
+        log.debug(">>>   destroySession: name={} id={} ",webSocketSession.getName(),webSocketSession.getId());
         webSocketSessionMap.remove(webSocketSession.getId());
         webSocketSessionNameMap.remove(sessionName);
     }

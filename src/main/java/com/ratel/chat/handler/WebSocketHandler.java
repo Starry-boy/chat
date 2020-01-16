@@ -11,17 +11,19 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.util.AttributeKey;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * * @Description webSocket 处理器
@@ -46,20 +48,8 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
     @Autowired
     private ChatProperties chatProperties;
 
-    @Value("${chat.message-persistence}")
-    private boolean isPersistence;
-
-    @Value("${chat.encryption}")
-    private boolean isEncryption;
-
-    @Value("${chat.needAuthorization}")
-    private boolean needAuthorization;
-
     @Autowired(required = false)
     private EncryptionHandler encryptionHandler;
-
-    @Autowired(required = false)
-    private AuthorizationHandler authorizationHandler;
 
     @Autowired
     private void initInterceptors(List<WebSocketInterceptor> webSocketInterceptors) {
@@ -93,11 +83,11 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
             webSocketInterceptors.addAll(noAnonList);
             this.interceptors = webSocketInterceptors;
         }
-        log.info("----------------------------->>>   init WebSocketInterceptor start!! ");
+        log.info(">>>   init WebSocketInterceptor start!! ");
         for (int i = 0; i < this.interceptors.size(); i++) {
-            log.info("----------------------------->>>   init WebSocketInterceptor:{} order:{} ", this.interceptors.get(i).getClass().getSimpleName(), i);
+            log.info(">>>   init WebSocketInterceptor:{} order:{} ", this.interceptors.get(i).getClass().getSimpleName(), i);
         }
-        log.info("----------------------------->>>   init WebSocketInterceptor end!! ");
+        log.info(">>>   init WebSocketInterceptor end!! ");
     }
 
     /**
@@ -111,18 +101,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         //添加到channelGroup通道组
         WebSocketSessionManger.createSession(new Random().nextLong(), ctx);
-        log.debug("----------------------------->>>   channelActive ");
+        log.debug(">>>   channelActive ");
     }
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        log.debug("----------------------------->>>   channelRegistered ");
+        log.debug(">>>   channelRegistered ");
         super.channelRegistered(ctx);
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        log.debug("----------------------------->>>   handlerAdded ");
+        log.debug(">>>   handlerAdded ");
         super.handlerAdded(ctx);
     }
 
@@ -136,80 +126,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
      **/
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.debug("----------------------------->>>   channelInactive ");
+        log.debug(">>>   channelInactive ");
         //销毁回话
         WebSocketSessionManger.destroySession(ctx.name());
+        super.channelInactive(ctx);
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        log.debug("----------------------------->>>   channelUnregistered ");
+        log.debug(">>>   channelUnregistered ");
         super.channelUnregistered(ctx);
     }
 
-    /**
-     * @return
-     * @Description 读取消息
-     * @Date 下午2:10 2020/1/14
-     * @Author ratel
-     * @Param
-     **/
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        try {
-            String tokenName = chatProperties.getTokenName();
-            if (!(msg instanceof FullHttpRequest)){
-                super.channelRead(ctx, msg);
-                return;
-            }
-            FullHttpRequest request = (FullHttpRequest) msg;
-            String uri = request.uri();
-            //uri 一致
-            if (chatProperties.getWebSocketUri().equals(uri)){
-                super.channelRead(ctx, msg);
-                return;
-            }
-            //uri 不包含 webSocketUri
-            if (!uri.contains(chatProperties.getWebSocketUri())){
-                ctx.channel().close();
-                return;
-            }
-            //如果请求 url 不对 直接抛出异常
-            if (needAuthorization) {
-                //如果url包含参数，需要处理
-                if (!uri.contains("?")) super.channelRead(ctx, msg);
-                String substring = uri.substring(uri.indexOf('?') + 1);
-                String[] split = substring.split("=");
-                String token = null;
-                for (int i = 0; i < substring.length(); i++) {
-                    if (!split[i].equals("token")) continue;
-                    if (++i > split.length - 1) continue;
-                    token = split[split.length - 1];
-                    log.debug("----------------------------->>>   token={} ",token);
-                    break;
-                }
-                //校验token
-                Assert.notNull(authorizationHandler,"授权处理器不能为空");
-                if (authorizationHandler.authorization(token)) {
-                    ctx.channel().close();
-                }
-            }
-            request.setUri(chatProperties.getWebSocketUri());
-            super.channelRead(ctx, msg);
-        } catch (Exception e) {
-            log.error(e);
-            ctx.channel().close();
-        }
-
-        /*}else if(msg instanceof TextWebSocketFrame){
-            //正常的TEXT消息类型
-            TextWebSocketFrame frame=(TextWebSocketFrame)msg;
-            System.out.println("客户端收到服务器数据：" +frame.text());
-            sendAllMessage(frame.text());
-        }
-        ctx.writeAndFlush("测试");
-        super.channelRead(ctx, msg);*/
-    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, TextWebSocketFrame textWebSocketFrame) throws Exception {
@@ -218,17 +146,17 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
         try {
             message = JSON.parseObject(json, Message.class);
         } catch (Exception e) {
-            log.error("----------------------------->>>   Message DeSerializable Error ");
+            log.error(">>>   Message DeSerializable Error ");
             log.error(e);
             return;
         }
         //消息解密
-        if (isEncryption) {
+        if (chatProperties.isEncryption()) {
             Assert.notNull(encryptionHandler, "配置了信息加密 需要手写一个解密处理器 实现 EncryptionHandler");
             encryptionHandler.decrypt(message);
         }
         //TODO 使用阻塞队列 消息持久化
-        if (isPersistence) {
+        if (chatProperties.isMessagePersistence()) {
             Assert.notNull(encryptionHandler, "配置了信息持久化 需要手写一个信息持久化处理器 实现 MessagePersistenceHandler");
             persistenceHandler.receiveMessage(message);
         }

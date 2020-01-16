@@ -15,22 +15,20 @@ import org.springframework.stereotype.Component;
  */
 @Log4j2
 @InterceptorOrder(1)
-//@Component
-//@ConditionalOnMissingBean(WebSocketInterceptor.class)
 public class SimpleWebSocketInterceptor implements WebSocketInterceptor {
 
     @Override
     public void receiveBefore(Message message) {
-        log.debug("----------------------------->>>   Demo receiveBefore ");
+        log.debug(">>>   Demo receiveBefore ");
     }
 
     @Override
     public void sendBefore(Message message) {
-        log.debug("----------------------------->>>   Demo sendBefore ");
+        log.debug(">>>   Demo sendBefore ");
     }
 
     @Override
     public void sendAfter(Message message) {
-        log.debug("----------------------------->>>   Demo sendAfter ");
+        log.debug(">>>   Demo sendAfter ");
     }
 }

@@ -21,7 +21,7 @@ public class SimpleMessageSender extends AbstractMessageSender {
     private final String TYPE = "simple";
     @Override
     public void sendMsg(Message message) {
-        log.debug("----------------------------->>>   Demo SimpleMessageSender ");
+        log.debug(">>>   Demo SimpleMessageSender ");
         Long to = message.getTo();
         WebSocketSession session = WebSocketSessionManger.getSessionById(to);
         this.baseSendMessage(session,message);
