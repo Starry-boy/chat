@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 @Data
 @Component
 @ConfigurationProperties(prefix = "chat")
-public class NettyProperties {
+public class ChatProperties {
     /** netty 端口 */
     private int port = 9001;
     /** netty 内容最大长度 */
@@ -24,4 +24,8 @@ public class NettyProperties {
     private boolean encryption = false;
     /** 是否需要授权才能使用 */
     private boolean needAuthorization = false;
+    /** token 名称 */
+    private String tokenName = "token";
+    /** webSocketUri */
+    private String webSocketUri = "/ws";
 }

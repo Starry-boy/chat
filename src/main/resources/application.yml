@@ -1,25 +1,11 @@
-#tomcat 配置
-server:
-  port: 9000 #端口
-  servlet:
-    context-path: / #servlet 拦截路径
-
-#spring 配置
-spring:
-#  profiles: dev #指定激活的配置文件
-  #数据源
-  datasource:
-    url: jdbc:mysql://127.0.0.1:3306/chat
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: '0804'
-
 #chat netty 配置
 chat:
   port: 9001 #netty 端口
   max-content-length: 10000
   message-persistence: false
   encryption: false
+  needAuthorization: false
+  tokenName: 'token'
 
 logging:
   level:

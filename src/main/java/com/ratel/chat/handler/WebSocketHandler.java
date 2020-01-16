@@ -5,6 +5,7 @@ import com.ratel.chat.anon.InterceptorOrder;
 import com.ratel.chat.entity.Message;
 import com.ratel.chat.interceptor.WebSocketInterceptor;
 import com.ratel.chat.netty.manager.WebSocketSessionManger;
+import com.ratel.chat.properties.ChatProperties;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
@@ -41,6 +42,9 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
     private MessageForwardHandler messageForwardHandler;
 
     private List<WebSocketInterceptor> interceptors;
+
+    @Autowired
+    private ChatProperties chatProperties;
 
     @Value("${chat.message-persistence}")
     private boolean isPersistence;
@@ -89,11 +93,11 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
             webSocketInterceptors.addAll(noAnonList);
             this.interceptors = webSocketInterceptors;
         }
-        log.info("------------------------------< init WebSocketInterceptor start!! >----------------------------");
+        log.info("----------------------------->>>   init WebSocketInterceptor start!! ");
         for (int i = 0; i < this.interceptors.size(); i++) {
-            log.info("------------------------------< init WebSocketInterceptor:{} order:{} >----------------------------", this.interceptors.get(i).getClass().getSimpleName(), i);
+            log.info("----------------------------->>>   init WebSocketInterceptor:{} order:{} ", this.interceptors.get(i).getClass().getSimpleName(), i);
         }
-        log.info("------------------------------< init WebSocketInterceptor end!! >----------------------------");
+        log.info("----------------------------->>>   init WebSocketInterceptor end!! ");
     }
 
     /**
@@ -107,18 +111,18 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         //添加到channelGroup通道组
         WebSocketSessionManger.createSession(new Random().nextLong(), ctx);
-        log.debug("------------------------------< channelActive >----------------------------");
+        log.debug("----------------------------->>>   channelActive ");
     }
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        log.debug("------------------------------< channelRegistered >----------------------------");
+        log.debug("----------------------------->>>   channelRegistered ");
         super.channelRegistered(ctx);
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        log.debug("------------------------------< handlerAdded >----------------------------");
+        log.debug("----------------------------->>>   handlerAdded ");
         super.handlerAdded(ctx);
     }
 
@@ -132,14 +136,14 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
      **/
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.debug("------------------------------< channelInactive >----------------------------");
+        log.debug("----------------------------->>>   channelInactive ");
         //销毁回话
         WebSocketSessionManger.destroySession(ctx.name());
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        log.debug("------------------------------< channelUnregistered >----------------------------");
+        log.debug("----------------------------->>>   channelUnregistered ");
         super.channelUnregistered(ctx);
     }
 
@@ -152,26 +156,49 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
      **/
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (null == msg && !(msg instanceof FullHttpRequest)) super.channelRead(ctx, msg);
-        FullHttpRequest request = (FullHttpRequest) msg;
-        String uri = request.uri();
-        //如果url包含参数，需要处理
-        if (!uri.contains("?")) super.channelRead(ctx, msg);
-        String substring = uri.substring(uri.indexOf('?') + 1);
-        String[] split = substring.split("=");
-        String token = null;
-        for (int i = 0; i < substring.length(); i++) {
-            if (!split[i].equals("token")) continue;
-            if (++i > split.length - 1) continue;
-            token = split[split.length - 1];
-            break;
-        }
-        //校验token
-        if (needAuthorization) {
-            if (authorizationHandler.authorization(token)) {
-                ctx.channel().close();
+        try {
+            String tokenName = chatProperties.getTokenName();
+            if (!(msg instanceof FullHttpRequest)){
+                super.channelRead(ctx, msg);
+                return;
             }
+            FullHttpRequest request = (FullHttpRequest) msg;
+            String uri = request.uri();
+            //uri 一致
+            if (chatProperties.getWebSocketUri().equals(uri)){
+                super.channelRead(ctx, msg);
+                return;
+            }
+            //uri 不包含 webSocketUri
+            if (!uri.contains(chatProperties.getWebSocketUri())){
+                ctx.channel().close();
+                return;
+            }
+            //如果请求 url 不对 直接抛出异常
+            if (needAuthorization) {
+                //如果url包含参数，需要处理
+                if (!uri.contains("?")) super.channelRead(ctx, msg);
+                String substring = uri.substring(uri.indexOf('?') + 1);
+                String[] split = substring.split("=");
+                String token = null;
+                for (int i = 0; i < substring.length(); i++) {
+                    if (!split[i].equals("token")) continue;
+                    if (++i > split.length - 1) continue;
+                    token = split[split.length - 1];
+                    log.debug("----------------------------->>>   token={} ",token);
+                    break;
+                }
+                //校验token
+                Assert.notNull(authorizationHandler,"授权处理器不能为空");
+                if (authorizationHandler.authorization(token)) {
+                    ctx.channel().close();
+                }
+            }
+            request.setUri(chatProperties.getWebSocketUri());
             super.channelRead(ctx, msg);
+        } catch (Exception e) {
+            log.error(e);
+            ctx.channel().close();
         }
 
         /*}else if(msg instanceof TextWebSocketFrame){
@@ -191,7 +218,7 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
         try {
             message = JSON.parseObject(json, Message.class);
         } catch (Exception e) {
-            log.error("------------------------------< Message DeSerializable Error >----------------------------");
+            log.error("----------------------------->>>   Message DeSerializable Error ");
             log.error(e);
             return;
         }
@@ -225,7 +252,6 @@ public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketF
         //发送消息后
         for (int i = interceptors.size() - 1; i >= 0; i--) {
             WebSocketInterceptor webSocketInterceptor = interceptors.get(i);
-            webSocketInterceptor.receiveBefore(message);
             webSocketInterceptor.sendAfter(message);
         }
     }
