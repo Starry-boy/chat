@@ -25,6 +25,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.stream.ChunkedWriteHandler;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -43,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 @Log4j2
 @Configuration
 @EnableConfigurationProperties(ChatProperties.class)
+@ConditionalOnProperty(prefix = "spring.chat", value = "enabled", matchIfMissing = true)
 public class NettyAutoConfiguration {
    @Bean
    @ConditionalOnMissingBean(MessageForwardHandler.class)
@@ -77,8 +79,15 @@ public class NettyAutoConfiguration {
         return messageManger;
     }
 
+    @Bean
+    public PermissionWebSocketHandler initPermissionWebSocketHandler(){
+       return new PermissionWebSocketHandler();
+    }
 
-
+    @Bean
+    public WebSocketHandler initWebSocketHandler(){
+       return new WebSocketHandler();
+    }
 
     /**
      * @return

@@ -24,7 +24,6 @@ import java.util.Map;
  * @Date 2020/1/16
  * @Version 1.0
  */
-@Component
 @Log4j2
 @ChannelHandler.Sharable
 public class PermissionWebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {

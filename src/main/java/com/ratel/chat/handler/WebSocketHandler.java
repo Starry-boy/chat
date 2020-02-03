@@ -33,7 +33,6 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @Version 1.0
  */
 @Log4j2
-@Component
 @ChannelHandler.Sharable
 public class WebSocketHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
 

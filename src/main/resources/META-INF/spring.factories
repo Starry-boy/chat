@@ -1,2 +1,1 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.ratel.chat.config.NettyAutoConfiguration
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.ratel.chat.config.NettyAutoConfiguration

@@ -18,7 +18,7 @@ import com.ratel.chat.netty.sender.MessageSender;
 @Log4j2
 //@Component
 public class SimpleMessageForwardHandler implements MessageForwardHandler {
-    @Autowired
+    @Autowired(required = false)
     private SenderFactory senderFactory;
 
     @Override
