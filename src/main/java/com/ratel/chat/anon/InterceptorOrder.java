@@ -1,6 +1,5 @@
 package com.ratel.chat.anon;
 
-import com.sun.istack.internal.NotNull;
 
 import java.lang.annotation.*;
 

@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.ratel</groupId>
-    <artifactId>chat-starter</artifactId>
+    <artifactId>chat-spring-boot-starter</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>chat</name>
     <description>基于 netty 和 websocket 的聊天室</description>
